@@ -32,7 +32,7 @@ Each task gets a priority score based on its urgency level and estimated time â€
 No setup required â€” clone the repo and open `sprintflow.html` in any modern browser.
 
 ```bash
-git clone https://github.com/<your-username>/sprintflow.git
+git clone https://github.com/shanzaykhalidfarooq/sprintflow.git
 cd sprintflow
 open sprintflow.html
 ```
