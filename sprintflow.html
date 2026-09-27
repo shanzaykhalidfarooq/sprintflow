@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>SprintFlow — Priority Task Planner</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink: #14171C;
+    --ink-2: #1C2028;
+    --paper: #F6F5F1;
+    --paper-dim: #E8E6DF;
+    --signal: #C9F031;
+    --ember: #FF6B4A;
+    --steel: #4A5568;
+    --muted: #8A8F98;
+    --border: #2A2F38;
+    box-sizing: border-box;
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  html { scroll-padding-top: env(safe-area-inset-top, 0px); }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; margin: 0; }
+  body {
+    background: var(--ink);
+    color: var(--paper);
+    font-family: 'Inter', -apple-system, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    min-height: 100%;
+  }
+  h1, h2, .num { font-family: 'Space Grotesk', 'Inter', sans-serif; }
+
+  .wrap { max-width: 760px; margin: 0 auto; padding: 28px 20px 64px; }
+
+  header {
+    display: flex; justify-content: space-between; align-items: flex-end;
+    border-bottom: 1px solid var(--border); padding-bottom: 18px; margin-bottom: 28px;
+    flex-wrap: wrap; gap: 12px;
+  }
+  header .brand h1 { font-size: 22px; font-weight: 700; margin: 0; letter-spacing: -0.01em; }
+  header .brand p { margin: 4px 0 0; color: var(--muted); font-size: 13px; }
+  .clock { text-align: right; }
+  .clock .num { font-size: 26px; font-weight: 700; color: var(--signal); letter-spacing: -0.02em; }
+  .clock .lbl { font-size: 11px; color: var(--muted); margin-top: 2px; }
+
+  form.add {
+    display: grid; grid-template-columns: 1fr 90px 130px auto; gap: 8px; margin-bottom: 24px;
+  }
+  input, select {
+    background: var(--ink-2); border: 1px solid var(--border); color: var(--paper);
+    border-radius: 6px; padding: 11px 12px; font-size: 14px; font-family: inherit;
+  }
+  input:focus, select:focus { outline: 2px solid var(--signal); outline-offset: 1px; }
+  button {
+    font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 14px;
+    border: none; border-radius: 6px; cursor: pointer;
+  }
+  .add button {
+    background: var(--signal); color: var(--ink); padding: 0 18px;
+  }
+  .add button:hover { filter: brightness(0.95); }
+
+  .empty {
+    border: 1px dashed var(--border); border-radius: 10px; padding: 40px 20px;
+    text-align: center; color: var(--muted); font-size: 14px;
+  }
+
+  ul.tasks { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+  .task {
+    background: var(--ink-2); border: 1px solid var(--border); border-radius: 10px;
+    padding: 14px 16px; display: flex; align-items: center; gap: 14px;
+  }
+  .task .rank {
+    font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 13px;
+    color: var(--ink); background: var(--signal); width: 26px; height: 26px;
+    border-radius: 50%; display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  .task.urgency-high .rank { background: var(--ember); }
+  .task-body { flex: 1; min-width: 0; }
+  .task-body .title { font-size: 14.5px; font-weight: 500; margin: 0 0 3px; word-break: break-word; }
+  .task-body .meta { font-size: 12px; color: var(--muted); display: flex; gap: 10px; flex-wrap: wrap; }
+  .tag {
+    display: inline-block; padding: 1px 7px; border-radius: 4px; font-size: 11px;
+    border: 1px solid var(--border); color: var(--muted);
+  }
+  .tag.high { color: var(--ember); border-color: var(--ember); }
+  .tag.med { color: var(--signal); border-color: var(--signal); }
+  .task-actions { display: flex; gap: 6px; flex-shrink: 0; }
+  .icon-btn {
+    background: transparent; border: 1px solid var(--border); color: var(--paper);
+    width: 32px; height: 32px; border-radius: 6px; font-size: 14px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .icon-btn:hover { border-color: var(--signal); color: var(--signal); }
+  .icon-btn.done-btn:hover { border-color: var(--ember); color: var(--ember); }
+
+  .focus-panel {
+    margin-top: 26px; padding: 22px; border-radius: 12px;
+    background: var(--paper); color: var(--ink); text-align: center;
+    display: none;
+  }
+  .focus-panel.active { display: block; }
+  .focus-panel .task-name { font-size: 13px; color: var(--steel); margin-bottom: 6px; }
+  .focus-panel .timer {
+    font-family: 'Space Grotesk', sans-serif; font-size: 56px; font-weight: 700;
+    letter-spacing: -0.02em; line-height: 1;
+  }
+  .focus-panel .controls { margin-top: 14px; display: flex; gap: 8px; justify-content: center; }
+  .focus-panel .controls button {
+    padding: 8px 16px; background: var(--ink); color: var(--paper); font-size: 13px;
+  }
+  .focus-panel .controls button.stop { background: transparent; border: 1px solid var(--steel); color: var(--steel); }
+
+  footer { margin-top: 40px; font-size: 12px; color: var(--muted); text-align: center; }
+
+  @media (max-width: 520px) {
+    form.add { grid-template-columns: 1fr 1fr; }
+    form.add button { grid-column: 1 / -1; padding: 11px; }
+    .clock .num { font-size: 20px; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="brand">
+      <h1>SprintFlow</h1>
+      <p>Priority planner &amp; focus timer for tight deadlines</p>
+    </div>
+    <div class="clock">
+      <div class="num" id="countdown">--:--:--</div>
+      <div class="lbl">until deadline</div>
+    </div>
+  </header>
+
+  <form class="add" id="addForm">
+    <input type="text" id="titleInput" placeholder="What needs doing?" required maxlength="80">
+    <input type="number" id="minsInput" placeholder="mins" min="1" max="600" required>
+    <select id="urgencyInput">
+      <option value="1">Low urgency</option>
+      <option value="2" selected>Medium urgency</option>
+      <option value="3">High urgency</option>
+    </select>
+    <button type="submit">Add task</button>
+  </form>
+
+  <div id="listArea"></div>
+
+  <div class="focus-panel" id="focusPanel">
+    <div class="task-name" id="focusTaskName">—</div>
+    <div class="timer" id="focusTime">00:00</div>
+    <div class="controls">
+      <button id="focusPause">Pause</button>
+      <button class="stop" id="focusStop">Stop</button>
+    </div>
+  </div>
+
+  <footer>Tasks are ranked by urgency × time-remaining. Saved locally in this browser.</footer>
+</div>
+
+<script>
+  // ---- Deadline countdown (set to this hackathon's deadline) ----
+  const DEADLINE = new Date("2026-09-27T21:00:00+05:00").getTime();
+  function tickClock() {
+    const el = document.getElementById('countdown');
+    const diff = DEADLINE - Date.now();
+    if (diff <= 0) { el.textContent = "00:00:00"; return; }
+    const h = Math.floor(diff / 3600000);
+    const m = Math.floor((diff % 3600000) / 60000);
+    const s = Math.floor((diff % 60000) / 1000);
+    el.textContent = [h, m, s].map(n => String(n).padStart(2, '0')).join(':');
+  }
+  setInterval(tickClock, 1000); tickClock();
+
+  // ---- Task storage ----
+  const STORE_KEY = 'sprintflow_tasks_v1';
+  let tasks = [];
+  try {
+    const raw = localStorage.getItem(STORE_KEY);
+    tasks = raw ? JSON.parse(raw) : [];
+  } catch (e) { tasks = []; }
+
+  function save() {
+    try { localStorage.setItem(STORE_KEY, JSON.stringify(tasks)); } catch (e) {}
+  }
+
+  // Priority score: urgency weight × normalized effort factor.
+  // Shorter high-urgency tasks bubble to the top (quick wins under time pressure).
+  function score(t) {
+    return t.urgency * (100 / (t.mins + 10));
+  }
+
+  function urgencyLabel(u) {
+    return u === 3 ? 'High' : u === 2 ? 'Medium' : 'Low';
+  }
+  function urgencyClass(u) {
+    return u === 3 ? 'high' : u === 2 ? 'med' : '';
+  }
+
+  function render() {
+    const area = document.getElementById('listArea');
+    if (tasks.length === 0) {
+      area.innerHTML = '<div class="empty">No tasks yet — add what you need to get done before the deadline, and this will rank them for you.</div>';
+      return;
+    }
+    const sorted = [...tasks].sort((a, b) => score(b) - score(a));
+    area.innerHTML = '<ul class="tasks">' + sorted.map((t, i) => `
+      <li class="task ${t.urgency === 3 ? 'urgency-high' : ''}" data-id="${t.id}">
+        <div class="rank">${i + 1}</div>
+        <div class="task-body">
+          <p class="title">${escapeHtml(t.title)}</p>
+          <div class="meta">
+            <span>${t.mins} min</span>
+            <span class="tag ${urgencyClass(t.urgency)}">${urgencyLabel(t.urgency)}</span>
+          </div>
+        </div>
+        <div class="task-actions">
+          <button class="icon-btn start-btn" title="Start focus timer" data-id="${t.id}">▶</button>
+          <button class="icon-btn done-btn" title="Mark done" data-id="${t.id}">✕</button>
+        </div>
+      </li>
+    `).join('') + '</ul>';
+  }
+
+  function escapeHtml(s) {
+    return s.replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  }
+
+  document.getElementById('addForm').addEventListener('submit', function (e) {
+    e.preventDefault();
+    const title = document.getElementById('titleInput').value.trim();
+    const mins = parseInt(document.getElementById('minsInput').value, 10);
+    const urgency = parseInt(document.getElementById('urgencyInput').value, 10);
+    if (!title || !mins) return;
+    tasks.push({ id: Date.now() + Math.random(), title, mins, urgency });
+    save(); render();
+    e.target.reset();
+    document.getElementById('urgencyInput').value = '2';
+    document.getElementById('titleInput').focus();
+  });
+
+  document.getElementById('listArea').addEventListener('click', function (e) {
+    const doneBtn = e.target.closest('.done-btn');
+    const startBtn = e.target.closest('.start-btn');
+    if (doneBtn) {
+      const id = doneBtn.dataset.id;
+      tasks = tasks.filter(t => String(t.id) !== id);
+      save(); render();
+      if (activeTaskId === id) stopFocus();
+    } else if (startBtn) {
+      const id = startBtn.dataset.id;
+      const t = tasks.find(t => String(t.id) === id);
+      if (t) startFocus(t);
+    }
+  });
+
+  // ---- Focus timer ----
+  let activeTaskId = null, remaining = 0, timerHandle = null, paused = false;
+
+  function startFocus(task) {
+    activeTaskId = String(task.id);
+    remaining = task.mins * 60;
+    paused = false;
+    document.getElementById('focusPanel').classList.add('active');
+    document.getElementById('focusTaskName').textContent = task.title;
+    document.getElementById('focusPause').textContent = 'Pause';
+    updateFocusDisplay();
+    clearInterval(timerHandle);
+    timerHandle = setInterval(() => {
+      if (paused) return;
+      remaining--;
+      if (remaining <= 0) { clearInterval(timerHandle); remaining = 0; }
+      updateFocusDisplay();
+    }, 1000);
+  }
+
+  function updateFocusDisplay() {
+    const m = Math.floor(remaining / 60);
+    const s = remaining % 60;
+    document.getElementById('focusTime').textContent =
+      String(m).padStart(2, '0') + ':' + String(s).padStart(2, '0');
+  }
+
+  function stopFocus() {
+    clearInterval(timerHandle);
+    activeTaskId = null;
+    document.getElementById('focusPanel').classList.remove('active');
+  }
+
+  document.getElementById('focusPause').addEventListener('click', function () {
+    paused = !paused;
+    this.textContent = paused ? 'Resume' : 'Pause';
+  });
+  document.getElementById('focusStop').addEventListener('click', stopFocus);
+
+  render();
+</script>
+</body>
+</html>
